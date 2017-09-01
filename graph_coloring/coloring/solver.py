@@ -44,7 +44,6 @@ def solve_it(input_data):
         line = lines[i]
         parts = line.split()
         edges.append((int(parts[0]), int(parts[1])))
-
     # build a trivial solution
     # every node has its own color
     vertices = []
@@ -66,7 +65,7 @@ def solve_it(input_data):
     visited = [False for i in range(node_count)]
 
     color_num = 0
-
+    """
     while not check_true(visited): #all node have been visited
         first_node.color = 0
         for i in vertices:
@@ -94,10 +93,55 @@ def solve_it(input_data):
                     infeasible = True
                     break
             if infeasible :
-                break
+                break         
+    """
+    """
     for i in vertices:
         print (i)
+    """
     solution = [i.color for i in vertices]
+
+    try:
+        m = Model("Coloring")
+        #m.Params.timelimit = 200.0
+
+
+        #set variable
+
+        y = m.addVars(node_count,lb=0.0,ub=node_count-1,vtype = GRB.INTEGER)
+        x = m.addVars(node_count, vtype=GRB.BINARY) #whether the color is used
+
+        k = [m.addVar(vtype = GRB.BINARY) for i in edges]
+        yMax = m.addVar(lb=0.0,ub=node_count-1,vtype = GRB.INTEGER)
+
+        m.update()
+        #set Objective
+
+        m.setObjective(x.sum(),GRB.MINIMIZE)  #min_max
+
+        #set constraints
+        for i in range(edge_count) :
+            diff = y[edges[i][0]] - y[edges[i][1]]
+            m.addConstr(diff *(k[i]*2-1) >= 1, 'c0')
+            m.addConstr(diff * -(k[i]*2-1) <= -1, 'c0-2')
+
+        m.addGenConstrMax(yMax,[y[i] for i in range(node_count)])
+
+        m.addConstr(x.sum() == yMax+1,'c1')
+
+        for i in range(1,node_count):
+            m.addConstr(x[i-1] >= x[i] , 'c3')
+        m.optimize()
+
+
+        vars = m.getVars()[:node_count:]
+        solution = [int(i.x) for i in vars]
+
+        color_num = int(m.objVal)
+
+    except GurobiError as e:
+        print ("Error : "+ str(e))
+
 
     # prepare the solution in the specified output format
     output_data = str(color_num) + ' ' + str(0) + '\n'
@@ -107,6 +151,8 @@ def solve_it(input_data):
 
 
 import sys
+from gurobipy import *
+import numpy
 
 if __name__ != '__main__':
     import sys

@@ -56,6 +56,8 @@ def solve_it(input_data):
             break
     """===========Gurobi==========="""
     m = Model("model")
+
+    m.Params.timelimit = 200.0
     #set variable
     x = m.addVars(set_count,vtype = GRB.BINARY,name = 'x') #whether the set is chosen
     y = m.addVars(set_count,item_count,vtype = GRB.BINARY,name = 'y')
@@ -66,11 +68,11 @@ def solve_it(input_data):
     for i in range(item_count):
         m.addConstr(y.sum("*",i) >= 1 ,"c0") #at least 1 element is chosen
     for i in range(set_count):
-        m.addConstr(y.sum(i,"*")==x[i]*len(sets[i].items) , '123')
+        m.addConstr(y.sum(i,"*")==x[i]*len(sets[i].items) , 'c1')
 
     for i in range(len(sets)):
         for j in sets[i].items:
-                m.addConstr(x[i] == y[i,int(j)] , "c1")
+                m.addConstr(x[i] == y[i,int(j)] , "c2")
 
     m.optimize()
     s = ''
@@ -103,6 +105,6 @@ if __name__ != '__main__':
         print('This test requires an input file.  Please select one from the data directory. (i.e. python solver.py ./data/sc_6_1)')
 
 if __name__ == '__main__' :
-    f = open('./data/sc_192_0','r')
+    f = open('./data/sc_157_0','r')
     input_data = f.read()
     print (solve_it(input_data))
